@@ -1,0 +1,28 @@
+name: Deadman Switch Check
+
+on:
+  schedule:
+    - cron: "0 9 * * *"  # هر روز ساعت 9 صبح UTC
+  workflow_dispatch:      # اجرای دستی
+
+jobs:
+  check_alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Script
+        run: |
+          pip install requests
+          python check_alive.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          OWNER_ID: ${{ secrets.OWNER_ID }}
+          RECIPIENT_IDS: ${{ secrets.RECIPIENT_IDS }}
+          DAYS_LIMIT: 3
