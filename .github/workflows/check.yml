@@ -1,28 +1,34 @@
-name: Deadman Switch Check
+name: Deadman Switch - check
+
+permissions:
+  contents: write
 
 on:
   schedule:
-    - cron: "0 9 * * *"  # هر روز ساعت 9 صبح UTC
-  workflow_dispatch:      # اجرای دستی
+    - cron: "0 9 * * *"   # هر روز ساعت 09:00 UTC — اگه لازم داری تغییر بده
+  workflow_dispatch:
 
 jobs:
-  check_alive:
+  check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Run Script
-        run: |
-          pip install requests
-          python check_alive.py
+      - name: Install deps
+        run: pip install python-telegram-bot==20.5
+
+      - name: Run check
+        run: python bot.py --check
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          OWNER_ID: ${{ secrets.OWNER_ID }}
-          RECIPIENT_IDS: ${{ secrets.RECIPIENT_IDS }}
-          DAYS_LIMIT: 3
+          YOUR_USER_ID: ${{ secrets.YOUR_USER_ID }}
+          GROUP_CHAT_ID: ${{ secrets.GROUP_CHAT_ID }}
+          DAYS_LIMIT: ${{ secrets.DAYS_LIMIT }}
