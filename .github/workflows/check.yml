@@ -1,16 +1,21 @@
-name: Deadman Switch - check
-
-permissions:
-  contents: write
+name: Check Alive Telegram Bot
 
 on:
   schedule:
-    - cron: "0 9 * * *"   # هر روز ساعت 09:00 UTC — اگه لازم داری تغییر بده
-  workflow_dispatch:
+    - cron: "0 6 * * *"   # هر روز ساعت 06:00 UTC اجرا می‌شود
+  workflow_dispatch:       # اجازه اجرای دستی از تب Actions
+  push:
+    paths:
+      - ".github/workflows/check_alive.yml"
+      - "check_alive.py"
+
+permissions:
+  contents: write   # برای commit کردن state نیاز داریم
 
 jobs:
-  check:
+  run:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -22,13 +27,29 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
-        run: pip install python-telegram-bot==20.5
+      - name: Install dependencies
+        run: |
+          pip install requests
 
-      - name: Run check
-        run: python bot.py --check
+      - name: Run check_alive.py
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          YOUR_USER_ID: ${{ secrets.YOUR_USER_ID }}
-          GROUP_CHAT_ID: ${{ secrets.GROUP_CHAT_ID }}
-          DAYS_LIMIT: ${{ secrets.DAYS_LIMIT }}
+          OWNER_ID: ${{ secrets.OWNER_ID }}
+          RECIPIENT_IDS: ${{ secrets.RECIPIENT_IDS }}
+          DAYS_LIMIT: 3
+        run: |
+          echo "=== Running check_alive.py ==="
+          python check_alive.py
+          echo "=== Script finished ==="
+
+      - name: Commit state files if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add last_checkin.json last_update.json || true
+            git commit -m "Update state from workflow $(date -u +'%Y-%m-%d %H:%M:%S')"
+            git push
+          else
+            echo "No state changes"
+          fi
